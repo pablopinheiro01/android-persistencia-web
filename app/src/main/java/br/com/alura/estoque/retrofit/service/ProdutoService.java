@@ -8,7 +8,7 @@ import retrofit2.http.GET;
 
 public interface ProdutoService {
 
-    @GET("produto")
+    @GET("produtos3")
     Call<List<Produto>> buscaTodos();
 
 }
