@@ -7,6 +7,7 @@ import retrofit2.internal.EverythingIsNonNull;
 
 public class CallBackSemRetorno implements Callback<Void> {
 
+    public static final String MENSAGEM_ERRO_RESPOSTA_NAO_SUCEDIDA = "Resposta não sucedida";
     private final RespostaCallBack callBack;
 
     public CallBackSemRetorno(RespostaCallBack callBack) {
@@ -21,7 +22,7 @@ public class CallBackSemRetorno implements Callback<Void> {
             callBack.quandoSucesso();
         }else{
             //notifica falha
-            callBack.quandoFalha("Resposta não sucedida");
+            callBack.quandoFalha(MENSAGEM_ERRO_RESPOSTA_NAO_SUCEDIDA);
         }
     }
 
@@ -29,7 +30,7 @@ public class CallBackSemRetorno implements Callback<Void> {
     @EverythingIsNonNull
     public void onFailure(Call<Void> call, Throwable t) {
         //notifica falha
-        callBack.quandoFalha("Resposta não sucedida "+t.getMessage());
+        callBack.quandoFalha(MENSAGEM_ERRO_RESPOSTA_NAO_SUCEDIDA+t.getMessage());
     }
 
     public interface RespostaCallBack{

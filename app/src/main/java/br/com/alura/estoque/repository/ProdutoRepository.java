@@ -98,10 +98,6 @@ public class ProdutoRepository {
         }).execute();
     }
 
-    public interface DadosCarregadosCallBack<T>{
-        void quandoSucesso(T resultado);
-        void quandoFalha(String erro);
-    }
 
     public void edita(Produto produto, DadosCarregadosCallBack<Produto> callBack) {
 
@@ -154,7 +150,6 @@ public class ProdutoRepository {
                         callBack.quandoFalha(mensagemErro);
                     }
                 }
-
         ));
     }
 
@@ -162,7 +157,13 @@ public class ProdutoRepository {
         new BaseAsyncTask<>(() -> {
             dao.remove(produto);
             return null;
-        }, callBack::quandoSucesso);
+        }, callBack::quandoSucesso).execute();
+    }
+
+
+    public interface DadosCarregadosCallBack<T>{
+        void quandoSucesso(T resultado);
+        void quandoFalha(String erro);
     }
 
 }
