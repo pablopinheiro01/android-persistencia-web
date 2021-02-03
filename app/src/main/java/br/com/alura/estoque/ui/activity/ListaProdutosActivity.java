@@ -74,13 +74,18 @@ public class ListaProdutosActivity extends AppCompatActivity {
 
     private void abreFormularioSalvaProduto() {
         new SalvaProdutoDialog(this, produtoCriado -> {
-            repository.salva(produtoCriado, new ProdutoRepository.DadosCarregadosListener<Produto>() {
-                @Override
-                public void quandoCarregados(Produto resultado) {
-                    adapter.adiciona(resultado);
-                }
+            repository.salva(produtoCriado, new ProdutoRepository.DadosCarregadosCallBack<Produto>() {
+                        @Override
+                        public void quandoSucesso(Produto produtoSalvo) {
+                            adapter.adiciona(produtoSalvo);
+                        }
+
+                        @Override
+                        public void quandoFalha(String erro) {
+                            Toast.makeText(ListaProdutosActivity.this, "Não foi possivel salvar o produto", Toast.LENGTH_LONG ).show();
+                        }
             });
-        } ).mostra();
+        }).mostra();
     }
 
     private void abreFormularioEditaProduto(int posicao, Produto produto) {

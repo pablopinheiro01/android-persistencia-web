@@ -1,6 +1,7 @@
 package br.com.alura.estoque.repository;
 
 import android.os.AsyncTask;
+import android.widget.Toast;
 
 import java.io.IOException;
 import java.util.List;
@@ -54,8 +55,11 @@ public class ProdutoRepository {
     }
 
     public void salva(Produto produto,
-                      DadosCarregadosListener<Produto> listener) {
+                      DadosCarregadosCallBack<Produto> callback) {
+        salvaNaApi(produto, callback);
+    }
 
+    private void salvaNaApi(Produto produto, DadosCarregadosCallBack<Produto> callback) {
         Call<Produto> call = service.salva(produto);
 
         //chamada assincrona da call
@@ -64,31 +68,43 @@ public class ProdutoRepository {
             @Override//comunicacao ok com o servidor
             public void onResponse(Call<Produto> call, Response<Produto> response) {
 
-                Produto produtoSalvo = response.body();
-                //salva primeiro na base
-                new BaseAsyncTask<>(() -> {
-                    long id = dao.salva(produto);
-                    return dao.buscaProduto(id);
-                }, salvo ->
-                        //notificar que o dado esta pronto
-                        listener.quandoCarregados(salvo)
-                ).execute();
-
-                //notificamos que o produto foi salvo
-                listener.quandoCarregados(produtoSalvo);
+                if (response.isSuccessful()) {
+                    Produto produtoSalvo = response.body();
+                    if (produtoSalvo != null) {
+                        salvaInterno(produto, callback);
+                    }
+                }else{
+                // notifica uma falha
+                callback.quandoFalha("Resposta não sucedida");
+                }
             }
 
             @Override //comunicao erro com o servidor
             public void onFailure(Call<Produto> call, Throwable t) {
-
+                //notifica uma falha
+                callback.quandoFalha("Falha de comunicação "+t.getMessage());
             }
         });
+    }
 
-
+    private void salvaInterno(Produto produto, DadosCarregadosCallBack<Produto> callBack) {
+        //salva primeiro na base
+        new BaseAsyncTask<>(() -> {
+            long id = dao.salva(produto);
+            return dao.buscaProduto(id);
+        }, salvo -> {
+            //notificar que o dado esta pronto
+            callBack.quandoSucesso(salvo);
+        }).execute();
     }
 
     public interface DadosCarregadosListener<T>{
         void quandoCarregados(T resultado);
+    }
+
+    public interface DadosCarregadosCallBack<T>{
+        void quandoSucesso(T resultado);
+        void quandoFalha(String erro);
     }
 
 }
