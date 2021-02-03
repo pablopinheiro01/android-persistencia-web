@@ -10,6 +10,7 @@ import br.com.alura.estoque.asynctask.BaseAsyncTask;
 import br.com.alura.estoque.database.dao.ProdutoDAO;
 import br.com.alura.estoque.model.Produto;
 import br.com.alura.estoque.retrofit.EstoqueRetrofit;
+import br.com.alura.estoque.retrofit.callback.BaseCallBack;
 import br.com.alura.estoque.retrofit.service.ProdutoService;
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -40,27 +41,17 @@ public class ProdutoRepository {
     private void buscaProdutosNaAPI(DadosCarregadosCallBack<List<Produto>> callBack) {
         Call<List<Produto>> call = service.buscaTodos();
 
-        call.enqueue(new Callback<List<Produto>>() {
-            @Override //executa na UI Thread Main Thread
-            public void onResponse(Call<List<Produto>> call, Response<List<Produto>> response) {
-                if(response.isSuccessful()){
-                    List<Produto> produtosNovos = response.body();
-
-                    if(produtosNovos != null){
-                        atualizaInterno(produtosNovos, callBack);
-                    }
-                }else{
-                    callBack.quandoFalha("Falha de comunicacao");
-                }
+        call.enqueue(new BaseCallBack<>(new BaseCallBack.RespostaCallBack<List<Produto>>() {
+            @Override
+            public void quandoSucesso(List<Produto> produtosNovos) {
+                atualizaInterno(produtosNovos, callBack);
             }
 
             @Override
-            public void onFailure(Call<List<Produto>> call, Throwable t) {
-                callBack.quandoFalha("Falha de comunicação "+t.getMessage());
+            public void quandoFalha(String mensagemErro) {
+                callBack.quandoFalha(mensagemErro);
             }
-        });
-
-
+        }));
     }
 
     private void atualizaInterno(List<Produto> produtos, DadosCarregadosCallBack<List<Produto>> callBack) {
@@ -83,28 +74,17 @@ public class ProdutoRepository {
         Call<Produto> call = service.salva(produto);
 
         //chamada assincrona da call
-        call.enqueue(new Callback<Produto>() {
-            //esses metodos sao executados na UI Thread
-            @Override//comunicacao ok com o servidor
-            public void onResponse(Call<Produto> call, Response<Produto> response) {
-
-                if (response.isSuccessful()) {
-                    Produto produtoSalvo = response.body();
-                    if (produtoSalvo != null) {
-                        salvaInterno(produto, callback);
-                    }
-                }else{
-                // notifica uma falha
-                callback.quandoFalha("Resposta não sucedida");
-                }
+        call.enqueue(new BaseCallBack<>(new BaseCallBack.RespostaCallBack<Produto>() {
+            @Override
+            public void quandoSucesso(Produto resultado) {
+                salvaInterno(produto, callback);
             }
 
-            @Override //comunicao erro com o servidor
-            public void onFailure(Call<Produto> call, Throwable t) {
-                //notifica uma falha
-                callback.quandoFalha("Falha de comunicação "+t.getMessage());
+            @Override
+            public void quandoFalha(String mensagemErro) {
+                callback.quandoFalha(mensagemErro);
             }
-        });
+        }));
     }
 
     private void salvaInterno(Produto produto, DadosCarregadosCallBack<Produto> callBack) {
