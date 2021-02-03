@@ -57,6 +57,8 @@ public class ListaProdutosAdapter extends
     }
 
     public void atualiza(List<Produto> produtos) {
+        //antes de carregar eu notifico que a minha lista foi limpa
+        notifyItemRangeRemoved(0, this.produtos.size());
         this.produtos.clear();
         this.produtos.addAll(produtos);
         this.notifyItemRangeInserted(0, this.produtos.size());
