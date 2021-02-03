@@ -12,9 +12,6 @@ public class EstoqueRetrofit {
     private final ProdutoService produtoService;
 
     public EstoqueRetrofit() {
-
-        //extraindo da documentacao https://github.com/square/okhttp/tree/master/okhttp-logging-interceptor
-        //interceptador das requisicoes http
         HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
         logging.setLevel(HttpLoggingInterceptor.Level.BODY);
         OkHttpClient client = new OkHttpClient.Builder()
@@ -23,11 +20,10 @@ public class EstoqueRetrofit {
 
         Retrofit retrofit = new Retrofit.Builder()
                 .baseUrl("http://192.168.15.190:8080/")
-                .addConverterFactory(GsonConverterFactory.create())
                 .client(client)
+                .addConverterFactory(GsonConverterFactory.create())
                 .build();
-
-       produtoService = retrofit.create(ProdutoService.class);
+        produtoService = retrofit.create(ProdutoService.class);
     }
 
     public ProdutoService getProdutoService() {

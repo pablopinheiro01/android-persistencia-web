@@ -45,12 +45,10 @@ public class ListaProdutosActivity extends AppCompatActivity {
     }
 
     private void buscaProdutos() {
-//        new BaseAsyncTask<>(dao::buscaTodos,
-//                resultado -> adapter.atualiza(resultado))
-//                .execute();
-        ProdutoService produtoService = new EstoqueRetrofit().getProdutoService();
-        Call<List<Produto>> call = produtoService.buscaTodos();
-        new BaseAsyncTask<>( () -> {
+        ProdutoService service = new EstoqueRetrofit().getProdutoService();
+        Call<List<Produto>> call = service.buscaTodos();
+
+        new BaseAsyncTask<>(() -> {
             try {
                 Response<List<Produto>> resposta = call.execute();
                 List<Produto> produtosNovos = resposta.body();
@@ -61,12 +59,17 @@ public class ListaProdutosActivity extends AppCompatActivity {
             return null;
         }, produtosNovos -> {
             if(produtosNovos != null){
-             adapter.atualiza(produtosNovos);
-            }else{
-                Toast.makeText(this, "Nao foi possivel buscsar os produtos da API", Toast.LENGTH_LONG).show();
+                adapter.atualiza(produtosNovos);
+            } else {
+                Toast.makeText(this,
+                        "Não possível buscar os produtos da API",
+                        Toast.LENGTH_SHORT).show();
             }
-        });
+        }).execute();
 
+//        new BaseAsyncTask<>(dao::buscaTodos,
+//                resultado -> adapter.atualiza(resultado))
+//                .execute();
     }
 
     private void configuraListaProdutos() {
