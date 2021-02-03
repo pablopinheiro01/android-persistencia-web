@@ -103,4 +103,36 @@ public class ProdutoRepository {
         void quandoFalha(String erro);
     }
 
+    public void edita(Produto produto, DadosCarregadosCallBack<Produto> callBack) {
+
+        editaNaApi(produto, callBack);
+
+    }
+
+    private void editaNaApi(Produto produto, DadosCarregadosCallBack<Produto> callBack) {
+        Call<Produto> call = service.edita(produto.getId(), produto);
+
+        call.enqueue(new BaseCallBack<>(new BaseCallBack.RespostaCallBack<Produto>() {
+            @Override
+            public void quandoSucesso(Produto resultado) {
+                editaInterno(produto, callBack);
+            }
+
+            @Override
+            public void quandoFalha(String mensagemErro) {
+                callBack.quandoFalha(mensagemErro);
+            }
+        }));
+    }
+
+    private void editaInterno(Produto produto, DadosCarregadosCallBack<Produto> callBack) {
+        new BaseAsyncTask<>( () -> {
+            dao.atualiza(produto);
+            return produto;
+        }, produtoEditado -> {
+            callBack.quandoSucesso(produtoEditado);
+        }).execute();
+    }
+
+
 }
