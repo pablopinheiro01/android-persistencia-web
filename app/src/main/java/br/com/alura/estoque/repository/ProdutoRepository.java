@@ -25,33 +25,53 @@ public class ProdutoRepository {
         this.dao = dao;
     }
 
-    public void buscaProdutos(DadosCarregadosListener<List<Produto>> listener) {
-        buscaProdutosInternos(listener);
+    public void buscaProdutos(DadosCarregadosCallBack<List<Produto>> callBack) {
+        buscaProdutosInternos(callBack);
     }
 
-    private void buscaProdutosInternos(DadosCarregadosListener<List<Produto>> listener) {
+    private void buscaProdutosInternos(DadosCarregadosCallBack<List<Produto>> callBack) {
         new BaseAsyncTask<>( dao::buscaTodos, resultado -> {
-            listener.quandoCarregados(resultado);
+            callBack.quandoSucesso(resultado);
             //notifica que o dado esta pronto
-            buscaProdutosNaAPI(listener);
+            buscaProdutosNaAPI(callBack);
         }).execute();
     }
 
-    private void buscaProdutosNaAPI(DadosCarregadosListener<List<Produto>> listener) {
+    private void buscaProdutosNaAPI(DadosCarregadosCallBack<List<Produto>> callBack) {
         Call<List<Produto>> call = service.buscaTodos();
-        new BaseAsyncTask<>( () ->{
-            try{
-                Response<List<Produto>> resposta = call.execute();
-                List<Produto> produtosNovos = resposta.body();
-                dao.salva(produtosNovos);
-            }catch(IOException e){
-                e.printStackTrace();
+
+        call.enqueue(new Callback<List<Produto>>() {
+            @Override //executa na UI Thread Main Thread
+            public void onResponse(Call<List<Produto>> call, Response<List<Produto>> response) {
+                if(response.isSuccessful()){
+                    List<Produto> produtosNovos = response.body();
+
+                    if(produtosNovos != null){
+                        atualizaInterno(produtosNovos, callBack);
+                    }
+                }else{
+                    callBack.quandoFalha("Falha de comunicacao");
+                }
             }
+
+            @Override
+            public void onFailure(Call<List<Produto>> call, Throwable t) {
+                callBack.quandoFalha("Falha de comunicação "+t.getMessage());
+            }
+        });
+
+
+    }
+
+    private void atualizaInterno(List<Produto> produtos, DadosCarregadosCallBack<List<Produto>> callBack) {
+        new BaseAsyncTask<>( () ->
+        {
+            dao.salva(produtos);
             return dao.buscaTodos();
-        }, produtosNovos -> {
-            listener.quandoCarregados(produtosNovos);
-            //notifica que o dado esta pronto
-        }).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        }, resultado ->
+        {
+            callBack.quandoSucesso(produtos);
+        }).execute();
     }
 
     public void salva(Produto produto,
@@ -96,10 +116,6 @@ public class ProdutoRepository {
             //notificar que o dado esta pronto
             callBack.quandoSucesso(salvo);
         }).execute();
-    }
-
-    public interface DadosCarregadosListener<T>{
-        void quandoCarregados(T resultado);
     }
 
     public interface DadosCarregadosCallBack<T>{
