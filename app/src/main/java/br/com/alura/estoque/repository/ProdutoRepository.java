@@ -1,29 +1,29 @@
 package br.com.alura.estoque.repository;
 
-import android.os.AsyncTask;
-import android.widget.Toast;
+import android.content.Context;
 
-import java.io.IOException;
 import java.util.List;
 
 import br.com.alura.estoque.asynctask.BaseAsyncTask;
+import br.com.alura.estoque.database.EstoqueDatabase;
 import br.com.alura.estoque.database.dao.ProdutoDAO;
 import br.com.alura.estoque.model.Produto;
 import br.com.alura.estoque.retrofit.EstoqueRetrofit;
-import br.com.alura.estoque.retrofit.callback.BaseCallBack;
+import br.com.alura.estoque.retrofit.callback.CallBackComRetorno;
+import br.com.alura.estoque.retrofit.callback.CallBackSemRetorno;
 import br.com.alura.estoque.retrofit.service.ProdutoService;
 import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
 
 public class ProdutoRepository {
 
     private final ProdutoDAO dao;
     ProdutoService service;
 
-    public ProdutoRepository(ProdutoDAO dao) {
+    public ProdutoRepository(Context context) {
+        EstoqueDatabase db = EstoqueDatabase.getInstance(context);
+        dao = db.getProdutoDAO();
+
         this.service =  new EstoqueRetrofit().getProdutoService();
-        this.dao = dao;
     }
 
     public void buscaProdutos(DadosCarregadosCallBack<List<Produto>> callBack) {
@@ -41,7 +41,7 @@ public class ProdutoRepository {
     private void buscaProdutosNaAPI(DadosCarregadosCallBack<List<Produto>> callBack) {
         Call<List<Produto>> call = service.buscaTodos();
 
-        call.enqueue(new BaseCallBack<>(new BaseCallBack.RespostaCallBack<List<Produto>>() {
+        call.enqueue(new CallBackComRetorno<>(new CallBackComRetorno.RespostaCallBack<List<Produto>>() {
             @Override
             public void quandoSucesso(List<Produto> produtosNovos) {
                 atualizaInterno(produtosNovos, callBack);
@@ -74,7 +74,7 @@ public class ProdutoRepository {
         Call<Produto> call = service.salva(produto);
 
         //chamada assincrona da call
-        call.enqueue(new BaseCallBack<>(new BaseCallBack.RespostaCallBack<Produto>() {
+        call.enqueue(new CallBackComRetorno<>(new CallBackComRetorno.RespostaCallBack<Produto>() {
             @Override
             public void quandoSucesso(Produto resultado) {
                 salvaInterno(produto, callback);
@@ -112,7 +112,7 @@ public class ProdutoRepository {
     private void editaNaApi(Produto produto, DadosCarregadosCallBack<Produto> callBack) {
         Call<Produto> call = service.edita(produto.getId(), produto);
 
-        call.enqueue(new BaseCallBack<>(new BaseCallBack.RespostaCallBack<Produto>() {
+        call.enqueue(new CallBackComRetorno<>(new CallBackComRetorno.RespostaCallBack<Produto>() {
             @Override
             public void quandoSucesso(Produto resultado) {
                 editaInterno(produto, callBack);
@@ -134,5 +134,35 @@ public class ProdutoRepository {
         }).execute();
     }
 
+    public void remove(Produto produto, DadosCarregadosCallBack<Void> callBack) {
+        removeNaApi(produto, callBack);
+    }
+
+    private void removeNaApi(Produto produto, DadosCarregadosCallBack<Void> callBack) {
+        Call<Void> call = service.remove(produto.getId());
+
+        call.enqueue(new CallBackSemRetorno(
+
+                new CallBackSemRetorno.RespostaCallBack() {
+                    @Override
+                    public void quandoSucesso() {
+                        removeInterno(produto, callBack);
+                    }
+
+                    @Override
+                    public void quandoFalha(String mensagemErro) {
+                        callBack.quandoFalha(mensagemErro);
+                    }
+                }
+
+        ));
+    }
+
+    private void removeInterno(Produto produto, DadosCarregadosCallBack<Void> callBack) {
+        new BaseAsyncTask<>(() -> {
+            dao.remove(produto);
+            return null;
+        }, callBack::quandoSucesso);
+    }
 
 }
