@@ -83,8 +83,6 @@ public class ListaProdutosActivity extends AppCompatActivity {
         } ).mostra();
     }
 
-
-
     private void abreFormularioEditaProduto(int posicao, Produto produto) {
         new EditaProdutoDialog(this, produto,
                 produtoEditado -> edita(posicao, produtoEditado))
